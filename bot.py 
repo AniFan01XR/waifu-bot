@@ -1,0 +1,42 @@
+import os, random
+import telebot
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+import apis
+
+TOKEN = os.getenv('TELEGRAM_TOKEN')
+CHAT_ID = os.getenv('GROUP_CHAT_ID')
+bot = telebot.TeleBot(TOKEN)
+
+def fetch_random_waifu():
+    tags = ['waifu', 'anime']
+    random_tag = random.choice(tags)
+    return apis.search_any(random_tag)
+
+def auto_send():
+    now = datetime.now()
+    if now.weekday()==6 or not (9<= now.hour <21):
+        return
+    img = fetch_random_waifu()
+    if img:
+        bot.send_photo(CHAT_ID, img, caption="🌸 Waifu random para alegrar el día!")
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(auto_send, 'interval', minutes=random.randint(10,45))
+scheduler.start()
+
+@bot.message_handler(commands=['img'])
+def cmd_img(m):
+    parts = m.text.split(maxsplit=2)
+    if len(parts)<3:
+        bot.reply_to(m, "Escribe `/img waifu personaje`")
+        return
+    kind, tag = parts[1], parts[2]
+    img = apis.search_any(tag)
+    if img:
+        bot.send_photo(m.chat.id, img)
+    else:
+        bot.reply_to(m, "No encontré nada 😢")
+
+if __name__=='__main__':
+    bot.infinity_polling()
