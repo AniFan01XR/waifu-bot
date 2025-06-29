@@ -1,2 +1,0 @@
-# waifu-bot
-Telegram bot
